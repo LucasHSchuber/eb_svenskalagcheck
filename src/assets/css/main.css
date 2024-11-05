@@ -36,6 +36,17 @@ th, td {
     text-align: left;
 }
 .row-1{
-    
     max-width: 15em !important;
 }
+
+.project-done{
+    background-color: rgb(0, 255, 21) !important;
+}
+.project-inprogress{
+    background-color: yellow !important;
+}
+.has-notes{
+    background-color: grey;
+}
+
+

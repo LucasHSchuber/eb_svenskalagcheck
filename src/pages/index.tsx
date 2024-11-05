@@ -8,14 +8,16 @@ import 'react-toastify/dist/ReactToastify.css';
 
 // import fontawesome
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faNoteSticky } from '@fortawesome/free-solid-svg-icons';
-// import { faCircleQuestion } from '@fortawesome/free-regular-svg-icons'; 
+import { faNoteSticky as regularNoteSticky } from '@fortawesome/free-regular-svg-icons';
+import { faNoteSticky as solidNoteSticky } from '@fortawesome/free-solid-svg-icons';
+// import { faNoteSticky } from '@fortawesome/free-regular-svg-icons'; 
 // import { faInstagram, faGithub, faFacebook, faLinkedin } from '@fortawesome/free-brands-svg-icons';
 
 // import loader
 import { Oval } from 'react-loader-spinner';  
 
 // import components
+import NotesModal from "../components/notesModal"
 
 // import ENVIROMENTAL VAR
 import { API_URL } from '../assets/ts/apiConfig'
@@ -34,6 +36,7 @@ interface Data {
     done_user: string;
     in_progress_date: string | null;
     in_progress_user: string;
+    notes: string;
 }
 
 
@@ -50,6 +53,9 @@ function Index() {
     const [matched, setMatched] = useState<Data[]>([]);
 
     const [sortStatus, setSortStatus] = useState<string>("all");
+
+    const [showNotesModal, setShowNotesModal] = useState(false);
+    const [selectedProject, setSelectedProject] = useState<Data[]>([]);
 
     
     // -------------- FETCHING TOKEN ------------------
@@ -173,13 +179,11 @@ function Index() {
       // METHOD to set Inprogress
       const setInProgress = async (uuid: string) => {
         console.log('uuid', uuid);
-
         const data = {
             project_uuid: uuid,
             portaluuid: "2dba368b-6205-11e1-b101-0025901d40ea",
             username: username
         }
-
         try {
             const response = await axios.put(`${API_URL}api/put/setinprogress`, data, {
                 headers: {
@@ -192,54 +196,65 @@ function Index() {
         } catch (error) {
             console.log('error', error);
         }   
-
         console.log('data', data);
-      };
+    };
 
-         // METHOD to set Done
-         const setDone = async (uuid: string) => {
-            console.log('uuid', uuid);
+    // METHOD to set Done
+    const setDone = async (uuid: string) => {
+        console.log('uuid', uuid);
+        const data = {
+            project_uuid: uuid,
+            portaluuid: "2dba368b-6205-11e1-b101-0025901d40ea",
+            username: username
+        }
+        try {
+            const response = await axios.put(`${API_URL}api/put/setdone`, data, {
+                headers: {
+                    "Content-type": "application/json"
+                }
+            })
+            console.log('response', response);
+            fetchData();
+            toast.success("Project was set to DONE successfully!")
+        } catch (error) {
+            console.log('error', error);
+        }   
+        console.log('data', data);
+    };
+
+
+    // sort table based on status all, in progress, done
+    const sortTableStatus = (status: string) => {
+    console.log('status:', status);
+    setSortStatus(status);
+    };
+
+
+
+    // Filter the matched items based on the sortStatus
+    const filteredItems = matched.filter(item => {
+        if (sortStatus === "in progress") {
+            return item.in_progress_date !== null && item.done_date === null;
+        } else if (sortStatus === "done") {
+            // return item.done_date !== null;
+           return item.done_date && (!item.in_progress_date || new Date(item.done_date) > new Date(item.in_progress_date))
+        }
+        return true; 
+    });
+
     
-            const data = {
-                project_uuid: uuid,
-                portaluuid: "2dba368b-6205-11e1-b101-0025901d40ea",
-                username: username
-            }
-    
-            try {
-                const response = await axios.put(`${API_URL}api/put/setdone`, data, {
-                    headers: {
-                        "Content-type": "application/json"
-                    }
-                })
-                console.log('response', response);
-                fetchData();
-                toast.success("Project was set to DONE successfully!")
-            } catch (error) {
-                console.log('error', error);
-            }   
-    
-            console.log('data', data);
-          };
-
-
-          // sort table based on status all, in progress, done
-          const sortTableStatus = (status: string) => {
-            console.log('status:', status);
-            setSortStatus(status);
-          };
-
-
-
-        // Filter the matched items based on the sortStatus
-        const filteredItems = matched.filter(item => {
-            if (sortStatus === "in progress") {
-                return item.in_progress_date !== null && item.done_date === null;
-            } else if (sortStatus === "done") {
-                return item.done_date !== null;
-            }
-            return true; 
-        });
+    const handleOpenModal = (item: any) => {
+        console.log(item);
+        setSelectedProject(item);
+        setShowNotesModal(true);
+    }
+    const closeModal = () => {
+        setShowNotesModal(false);
+    } 
+    const handleSuccess = () => {
+        toast.success("Notes was updated successfully!"); 
+        fetchData();
+    };
 
 
 
@@ -289,12 +304,12 @@ function Index() {
                     <thead>
                         <tr>
                             {/* <th>UUID</th> */}
-                            <th>Project Name</th>
-                            <th>Status Date</th>
                             <th>Status</th>
+                            <th>Project Name</th>
                             <th>Status User</th>
-                            <th></th>
-                            <th></th>
+                            <th>Status Date</th>
+                            {/* <th></th> */}
+                            <th>Change Status</th>
                             <th>Notes</th>
                         </tr>
                     </thead>
@@ -304,7 +319,7 @@ function Index() {
                             <td style={{ 
                                 textAlign: 'center', 
                                 height: '100px', 
-                                width: '390%',
+                                width: '820%',
                                 display: 'flex', 
                                 justifyContent: 'center', 
                                 alignItems: 'center' 
@@ -322,27 +337,42 @@ function Index() {
                         filteredItems.length > 0 ? filteredItems.map(item => (
                             <tr key={item.uuid}>
                                 {/* <td>{item.uuid}</td> */}
-                                <td className='row-1'>{item.name}</td>
-                                <td>
-                                    {item.done_date ? item.done_date.substring(0,10)
-                                        : item.in_progress_date ? item.in_progress_date.substring(0,10)
-                                        : ""}
+                                <td className={`${
+                                    item.done_date && (!item.in_progress_date || new Date(item.done_date) > new Date(item.in_progress_date))
+                                        ? "project-done"
+                                        : item.in_progress_date && (!item.done_date || new Date(item.in_progress_date) > new Date(item.done_date))
+                                        ? "project-inprogress"
+                                        : ""
+                                }`}>
+                                    {/* {item.done_date && item.done_date ? "DONE" : item.in_progress_date ? "IN PROGRESS" : ""} */}
+                                    {item.done_date && (!item.in_progress_date || new Date(item.done_date) > new Date(item.in_progress_date))
+                                    ? "DONE"
+                                    : item.in_progress_date
+                                    ? "IN PROGRESS"
+                                    : ""}
                                 </td>
-                                <td>
-                                    {item.done_date && item.done_date ? "DONE" : item.in_progress_date ? "IN PROGRESS" : ""}
-                                </td>
+                                <td className='row-1'>{item.name}</td>   
                                 <td>
                                     {item.done_date ? item.done_user
                                         : item.in_progress_date ? item.in_progress_user 
                                         : ""}
                                 </td>
                                 <td>
-                                    <button onClick={() => setInProgress(item.uuid)}>In progress</button>
+                                    {item.done_date ? item.done_date.substring(0,10)
+                                        : item.in_progress_date ? item.in_progress_date.substring(0,10)
+                                        : ""}
+                                </td>
+                                {/* <td>
+                                    <button title='Set Status to In Progress' onClick={() => setInProgress(item.uuid)}>In progress</button>
+                                </td> */}
+                                <td>
+                                    <button title='Set Status to In Progress' className='mr-1 in-progress-status-button' onClick={() => setInProgress(item.uuid)}>In Progress</button>
+                                    <button title='Set Status to Done' className='done-status-button' onClick={() => setDone(item.uuid)}>Done</button>
                                 </td>
                                 <td>
-                                    <button onClick={() => setDone(item.uuid)}>Done</button>
+                                    <button title='Open Notes' className={`notes-table-button`} onClick={() => handleOpenModal(item)}>{item.notes ? <FontAwesomeIcon icon={solidNoteSticky} /> : <FontAwesomeIcon icon={regularNoteSticky} />}
+                                    </button>
                                 </td>
-                                <td><button><FontAwesomeIcon icon={faNoteSticky} /></button></td>
                             </tr>
                         )) : (
                             <tr>
@@ -358,6 +388,10 @@ function Index() {
             </div>    
         </div>
 
+            {showNotesModal && (
+                < NotesModal show={showNotesModal} onClose={closeModal} onSucces={handleSuccess} selectedProject={selectedProject}/>
+            )}        
+            
             <ToastContainer
                 position="bottom-left"
                 autoClose={4000}
