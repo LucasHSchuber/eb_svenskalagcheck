@@ -15,6 +15,12 @@ html,body{
     font-family: "Cabin", sans-serif;
 }
 
+@media (max-width: 1410px) {
+    .wrapper{
+        padding: 5em 2em 10em 2em;
+    }
+}
+
 
 
 .button-box{
@@ -24,7 +30,7 @@ html,body{
     margin: 0 1em 0 0;
 }
 .table {
-    /* width: 90% !important; */
+    width: 100% !important;
     /* table-layout: fixed; */
 }
 .table th {
@@ -35,8 +41,27 @@ th, td {
     padding: 7px !important;
     text-align: left;
 }
-.row-1{
-    max-width: 15em !important;
+
+/* //tables row */
+.row-projectname{
+    width: 26em !important;
+    min-width: 24em;
+}
+.row-status{
+    width: 8em !important;
+}
+.status-select{
+    height: 2em;
+    width: 10em;
+}
+.search-box{
+    border-radius: 30px;
+    padding: 0.25em 0.75em 0.15em 0.75em;
+    border: 2px solid rgb(167, 167, 167);
+    width: 13em;
+}
+.border-search-box{
+    border: 2px solid black;
 }
 
 .project-done{
@@ -45,8 +70,26 @@ th, td {
 .project-inprogress{
     background-color: yellow !important;
 }
+.project-none{
+    background-color: rgb(241, 241, 241) !important;
+}
 .has-notes{
     background-color: grey;
 }
 
 
+
+@media (max-width: 1410px) {
+    .row-projectname{
+        min-width: 10em;
+    }
+    .row-status{
+        width: 3em !important;
+    }
+    .status-select{
+        width: 6em;
+    }
+    .search-box{
+        width: 12em;
+    }
+}
