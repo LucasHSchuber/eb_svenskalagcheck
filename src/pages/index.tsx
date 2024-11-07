@@ -9,7 +9,7 @@ import 'react-toastify/dist/ReactToastify.css';
 // import fontawesome
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faNoteSticky as regularNoteSticky } from '@fortawesome/free-regular-svg-icons';
-import { faNoteSticky as solidNoteSticky } from '@fortawesome/free-solid-svg-icons';
+import { faNoteSticky as solidNoteSticky, faArrowUpWideShort, faArrowDownShortWide } from '@fortawesome/free-solid-svg-icons';
 // import { faNoteSticky } from '@fortawesome/free-regular-svg-icons'; 
 // import { faInstagram, faGithub, faFacebook, faLinkedin } from '@fortawesome/free-brands-svg-icons';
 
@@ -37,6 +37,7 @@ interface Data {
     in_progress_date: string | null;
     in_progress_user: string;
     notes: string;
+    last_activity: string | null;
 }
 interface Timestamp {
     done_date: string | null;
@@ -60,6 +61,7 @@ function Index() {
     const [matched, setMatched] = useState<Data[]>([]);
 
     const [sortStatus, setSortStatus] = useState<string>("all");
+    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc'); 
 
     const [showNotesModal, setShowNotesModal] = useState(false);
     const [selectedProject, setSelectedProject] = useState<Data[]>([]);
@@ -262,7 +264,8 @@ function Index() {
                 }
             })
             console.log('response', response);
-            fetchData();
+            // fetchData();
+            checkForUpdates()
             toast.success("Project set to 'None' successfully!")
         } catch (error) {
             console.log('error', error);
@@ -285,7 +288,8 @@ function Index() {
                 }
             })
             console.log('response', response);
-            fetchData();
+            // fetchData();
+            checkForUpdates();
             toast.success("Project set to 'In Progress' successfully!")
         } catch (error) {
             console.log('error', error);
@@ -308,7 +312,8 @@ function Index() {
                 }
             })
             console.log('response', response);
-            fetchData();
+            // fetchData();
+            checkForUpdates();
             toast.success("Project set to 'Done' successfully!")
         } catch (error) {
             console.log('error', error);
@@ -318,13 +323,32 @@ function Index() {
 
 
 
+
+    //  --------------- SORTING TABLE --------------
+
+    const sortTable = (column: string) => {
+    const sortedData = [...matched]; // clone data array
+    let direction: 'asc' | 'desc' = sortDirection === 'asc' ? 'desc' : 'asc';
+    
+    if (column === 'last_activity') {
+        sortedData.sort((a, b) => {
+            // Convert to Date, with a fallback if last_activity is null
+            const dateA = new Date(a.last_activity ?? 0).getTime();
+            const dateB = new Date(b.last_activity ?? 0).getTime();
+            return direction === 'asc' ? dateA - dateB : dateB - dateA;
+        });
+    } 
+    // setSortColumn(column);
+    setSortDirection(direction);
+    setData(sortedData);
+    };
+
+
     // Sort table based on status all, in progress, done
     const sortTableStatus = (status: string) => {
     console.log('status:', status);
     setSortStatus(status);
     };
-
-
 
     // Filter the matched items based on the sortStatus
     const filteredItems = matched.filter(item => {
@@ -334,8 +358,10 @@ function Index() {
             // return item.done_date !== null;
            return item.done_date && (!item.in_progress_date || new Date(item.done_date) > new Date(item.in_progress_date))
         }
-        return true; 
+        // return true;
+        return !item.done_date && !item.in_progress_date;
     });
+
 
 
 
@@ -402,7 +428,7 @@ function Index() {
         <div className='wrapper'> 
             <div className='d-flex'>
                 <div className='button-box'>
-                    <button className={`${sortStatus === "all" ? "all" : "table-button"}`} onClick={()=>sortTableStatus("all")} >All</button>
+                    <button className={`${sortStatus === "all" ? "all" : "table-button"}`} onClick={()=>sortTableStatus("all")} >New</button>
                     <button className={`${sortStatus === "in progress" ? "in-progress" : "table-button"}`} onClick={()=>sortTableStatus("in progress")} >In progress</button>
                     <button className={`${sortStatus === "done" ? "done" : "table-button"}`}  onClick={()=>sortTableStatus("done")}>Done</button>
                 </div>
@@ -418,6 +444,7 @@ function Index() {
                                     onChange={(e)=>handleSearchInput(e.target.value)}
                                 ></input>
                             </th>
+                            <th className='last_activity-th' title='Sort By Last Activity' onClick={() => sortTable("last_activity")}>Last Activity {sortDirection === "asc" ? <FontAwesomeIcon icon={faArrowDownShortWide} className='last_activity-th-icon' /> : <FontAwesomeIcon icon={faArrowUpWideShort} className='last_activity-th-icon' />} </th>
                             <th>Change Status</th>
                             <th>Status User</th>
                             <th>Status Date</th>
@@ -431,7 +458,7 @@ function Index() {
                             <td style={{ 
                                 textAlign: 'center', 
                                 height: '100px', 
-                                width: '1170%',
+                                width: '1325%',
                                 display: 'flex', 
                                 justifyContent: 'center', 
                                 alignItems: 'center' 
@@ -465,6 +492,7 @@ function Index() {
                                     : ""}
                                 </td>
                                 <td className='row-projectname'>{item.name}</td>
+                                <td>{item.last_activity?.substring(0,10)}</td>
                                 <td>
                                     <select
                                         title="Set Project Status"
@@ -483,9 +511,9 @@ function Index() {
                                         defaultValue={item.done_date && (!item.in_progress_date || new Date(item.done_date) > new Date(item.in_progress_date)) ? "Done" : item.in_progress_date && (!item.done_date || new Date(item.in_progress_date) > new Date(item.done_date)) ? "In Progress" : ""} 
                                     >
                                         <option value="" disabled>Select Status</option>
-                                        <option value="None">None</option> 
-                                        <option value="In Progress">In Progress</option>
-                                        <option value="Done">Done</option>
+                                        <option value="None" style={{ backgroundColor: "#e7e7e7" }}>None</option> 
+                                        <option value="In Progress" style={{ backgroundColor: "yellow" }}>In Progress</option>
+                                        <option value="Done" style={{ backgroundColor: "#00ff15" }}>Done</option>
                                     </select>
                                 </td>   
                                 <td>
@@ -512,7 +540,7 @@ function Index() {
                             </tr>
                         )) : (
                             <tr>
-                                <td style={{ textAlign: 'center', padding: '20px' }}>
+                                <td>
                                     No data available
                                 </td>
                             </tr>
