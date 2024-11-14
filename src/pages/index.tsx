@@ -38,14 +38,21 @@ interface Data {
     in_progress_user: string;
     notes: string;
     last_activity: string | null;
+    memberslist: boolean;
 }
 interface Timestamp {
     done_date: string | null;
     in_progress_date: string | null;
 }
-
 interface Timestamps {
     [uuid: string]: Timestamp;
+}
+
+interface Memberslist {
+    memberslist: boolean;
+}
+interface Memberslists {
+    [uuid: string]: Memberslist;
 }
 
 
@@ -57,6 +64,7 @@ function Index() {
 
     const [data, setData] = useState<Data[]>([]);
     const [latestTimestamps, setLatestTimestamps] = useState<Timestamps>({});
+    const [latestMemberslist, setLatestMemberslist] = useState<Memberslists>({});
     const [svenskaLag, setSvenskaLag] = useState<Data[]>([]);
     const [matched, setMatched] = useState<Data[]>([]);
 
@@ -114,8 +122,6 @@ function Index() {
 
 
 
-
-
     // METHOD to fetch data
     const fetchData = async () => {
         scrollPosition.current = window.scrollY;
@@ -131,7 +137,10 @@ function Index() {
                 setData(response.data.data)
 
                 const updatedTimestamps = getLatestTimestamps(response.data.data);
+                const updatedMemberslist = getLatestMemberslist(response.data.data);
+                console.log('updatedMemberslist', updatedMemberslist);
                 setLatestTimestamps(updatedTimestamps);
+                setLatestMemberslist(updatedMemberslist);
             } catch (error) {
                 console.log('error', error);
             }
@@ -152,18 +161,12 @@ function Index() {
             }
         window.scrollTo(0, scrollPosition.current);
     }
+    useEffect(() => {
+        fetchData(); 
+    }, [token]);
 
-    // METHOD to extract latest timestamps 
-    const getLatestTimestamps = (data: any) => {
-        const timestamps: Timestamps = {};
-        data.forEach((item: any) => {
-            timestamps[item.uuid] = {
-                done_date: item.done_date,
-                in_progress_date: item.in_progress_date,
-            };
-        });
-        return timestamps;
-    };
+
+
 
     // Check if there are any updates by comparing timestamps
     const checkForUpdates = async () => {
@@ -177,7 +180,6 @@ function Index() {
             console.log('newData', newData);
 
             let needsUpdate = false;
-
             // Compare new data timestamps to the latest stored timestamps
             newData.forEach((item: any) => {
                 const storedTimestamp = latestTimestamps[item.uuid];
@@ -199,9 +201,6 @@ function Index() {
             console.log('Error checking for updates:', error);
         }
     };
-    useEffect(() => {
-        fetchData(); 
-    }, [token]);
     // Periodic check setup
     useEffect(() => {
         const intervalId = setInterval(() => {
@@ -209,33 +208,20 @@ function Index() {
         }, 5000);
         return () => clearInterval(intervalId); 
     }, []); 
+
+    // METHOD to extract latest timestamps 
+    const getLatestTimestamps = (data: any) => {
+        const timestamps: Timestamps = {};
+        data.forEach((item: any) => {
+            timestamps[item.uuid] = {
+                done_date: item.done_date,
+                in_progress_date: item.in_progress_date,
+            };
+        });
+        return timestamps;
+    };
     
     
-
-
-
-
-
-
-    // useEffect(() => {   
-    //         if (TokenValidation){
-    //             fetchData();
-    //             console.log('fetching data');
-    //         } else if (TokenValidation == false && TokenValidation !== null) {
-    //             console.log("TOKEN MISSING OR INVALID");
-    //             toast.error("Token is missing or invalid")
-    //             setLoading(false);
-    //         }
-    // }, [TokenValidation]);
-    // // Update every 30 seconds
-    // useEffect(() => {
-    //     const intervalId = setInterval(() => {
-    //         fetchData();
-    //     }, 60000); 
-    //     return () => clearInterval(intervalId);
-    // }, []); 
-    
-
 
     //merge tables 
     useEffect(() => {
@@ -247,10 +233,12 @@ function Index() {
             console.log('matched', matchedData);
             setMatched(matchedData)
         }
-      }, [svenskaLag, data]);
+    }, [svenskaLag, data]);
 
-       // METHOD to set none
-       const setNone = async (uuid: string) => {
+
+
+    // METHOD to set none
+    const setNone = async (uuid: string) => {
         console.log('uuid', uuid);
         const data = {
             project_uuid: uuid,
@@ -266,15 +254,15 @@ function Index() {
             console.log('response', response);
             // fetchData();
             checkForUpdates()
-            toast.success("Project set to 'None' successfully!")
+            toast.success("Status har uppdaterats till 'Nytt'")
         } catch (error) {
             console.log('error', error);
         }   
         console.log('data', data);
     };
 
-      // METHOD to set Inprogress
-      const setInProgress = async (uuid: string) => {
+    // METHOD to set Inprogress
+    const setInProgress = async (uuid: string) => {
         console.log('uuid', uuid);
         const data = {
             project_uuid: uuid,
@@ -290,7 +278,7 @@ function Index() {
             console.log('response', response);
             // fetchData();
             checkForUpdates();
-            toast.success("Project set to 'In Progress' successfully!")
+            toast.success("Status har uppdaterats till 'Pågående'")
         } catch (error) {
             console.log('error', error);
         }   
@@ -314,7 +302,7 @@ function Index() {
             console.log('response', response);
             // fetchData();
             checkForUpdates();
-            toast.success("Project set to 'Done' successfully!")
+            toast.success("Status har uppdaterats till 'Klart'")
         } catch (error) {
             console.log('error', error);
         }   
@@ -327,20 +315,18 @@ function Index() {
     //  --------------- SORTING TABLE --------------
 
     const sortTable = (column: string) => {
-    const sortedData = [...matched]; // clone data array
-    let direction: 'asc' | 'desc' = sortDirection === 'asc' ? 'desc' : 'asc';
-    
-    if (column === 'last_activity') {
-        sortedData.sort((a, b) => {
-            // Convert to Date, with a fallback if last_activity is null
-            const dateA = new Date(a.last_activity ?? 0).getTime();
-            const dateB = new Date(b.last_activity ?? 0).getTime();
-            return direction === 'asc' ? dateA - dateB : dateB - dateA;
-        });
-    } 
-    // setSortColumn(column);
-    setSortDirection(direction);
-    setData(sortedData);
+        const sortedData = [...matched]; // clone data array
+        let direction: 'asc' | 'desc' = sortDirection === 'asc' ? 'desc' : 'asc';
+        
+        if (column === 'last_activity') {
+            sortedData.sort((a, b) => {
+                const dateA = new Date(a.last_activity ?? 0).getTime();
+                const dateB = new Date(b.last_activity ?? 0).getTime();
+                return direction === 'asc' ? dateA - dateB : dateB - dateA;
+            });
+        } 
+        setSortDirection(direction);
+        setData(sortedData);
     };
 
 
@@ -355,10 +341,8 @@ function Index() {
         if (sortStatus === "in progress") {
             return item.in_progress_date !== null && item.done_date === null;
         } else if (sortStatus === "done") {
-            // return item.done_date !== null;
            return item.done_date && (!item.in_progress_date || new Date(item.done_date) > new Date(item.in_progress_date))
         }
-        // return true;
         return !item.done_date && !item.in_progress_date;
     });
 
@@ -371,7 +355,6 @@ function Index() {
         setSearchString(search);
     };
 
-    
 
     // Modal methods
     const handleOpenModal = (item: any) => {
@@ -383,10 +366,85 @@ function Index() {
         setShowNotesModal(false);
     } 
     const handleSuccess = () => {
-        toast.success("Notes updated successfully!"); 
+        toast.success("Anteckningar har uppdaterats"); 
         fetchData();
     };
 
+
+
+
+
+
+    // Checkbox change - Update memeberslist in db
+    const handleCheckboxChange = async (e: any, uuid: any) => {
+        console.log('e', e.target.checked);
+        console.log('uuid', uuid);
+        const updatedData = {
+            project_uuid: uuid,
+            status: e.target.checked === true ? "1" : "0"
+        } 
+        try {
+            const responseCheck = await axios.put(`${API_URL}api/put/checkmemberslist`, updatedData, {
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            })
+            console.log('responseCheck', responseCheck);
+            if (responseCheck.status === 200){
+                console.log('Updated');
+                checkForUpdatedMemberslist();
+                // toast.success("")
+            } else {
+                console.log('Failed');
+                // toast.error("")
+            }
+        } catch (error) {
+            console.log('Error when checking memberslist', error);
+        }
+    };
+
+    // METHOD to extract latest timestamps 
+    const getLatestMemberslist = (data: any) => {
+        const memberslist: Memberslists = {};
+        data.forEach((item: any) => {
+            memberslist[item.uuid] = {
+                memberslist: item.memberslist,
+            };
+        });
+        return memberslist;
+    };
+
+    // Check if there are any updates by comparing timestamps
+    const checkForUpdatedMemberslist = async () => {
+        try {
+            const response = await axios.get(`${API_URL}api/get/svenskalag/data`, {
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            });
+            const newData = response.data.data;
+            console.log('newData', newData);
+
+            let needsUpdate = false;
+            // Compare
+            newData.forEach((item: any) => {
+                const storedList = latestMemberslist[item.uuid];
+                if (
+                    storedList &&
+                    (storedList.memberslist !== item.memberslist)
+                ) {
+                    needsUpdate = true;
+                }
+            });
+            // if any changes are detected
+            if (needsUpdate) {
+                setData(newData);
+                setLatestMemberslist(getLatestMemberslist(newData));
+            }
+        } catch (error) {
+            console.log('Error checking for updates:', error);
+        }
+    };
 
 
 
@@ -428,28 +486,29 @@ function Index() {
         <div className='wrapper'> 
             <div className='d-flex'>
                 <div className='button-box'>
-                    <button className={`${sortStatus === "all" ? "all" : "table-button"}`} onClick={()=>sortTableStatus("all")} >New</button>
-                    <button className={`${sortStatus === "in progress" ? "in-progress" : "table-button"}`} onClick={()=>sortTableStatus("in progress")} >In progress</button>
-                    <button className={`${sortStatus === "done" ? "done" : "table-button"}`}  onClick={()=>sortTableStatus("done")}>Done</button>
+                    <button className={`${sortStatus === "all" ? "all" : "table-button"}`} onClick={()=>sortTableStatus("all")} >Nytt</button>
+                    <button className={`${sortStatus === "in progress" ? "in-progress" : "table-button"}`} onClick={()=>sortTableStatus("in progress")} >Pågående</button>
+                    <button className={`${sortStatus === "done" ? "done" : "table-button"}`}  onClick={()=>sortTableStatus("done")}>Klart</button>
                 </div>
                 <table className='table'>
                     <thead>
                         <tr>
                             {/* <th>UUID</th> */}
                             <th>Status</th>
-                            <th>Project Name
+                            <th>Projektnamn
                             <input
                                     className={`ml-3 search-box ${searchString ? "border-search-box" : ""}`}
                                     placeholder='Search..'
                                     onChange={(e)=>handleSearchInput(e.target.value)}
                                 ></input>
                             </th>
-                            <th className='last_activity-th' title='Sort By Last Activity' onClick={() => sortTable("last_activity")}>Last Activity {sortDirection === "asc" ? <FontAwesomeIcon icon={faArrowDownShortWide} className='last_activity-th-icon' /> : <FontAwesomeIcon icon={faArrowUpWideShort} className='last_activity-th-icon' />} </th>
-                            <th>Change Status</th>
-                            <th>Status User</th>
-                            <th>Status Date</th>
+                            <th className='last_activity-th' title='Sort By Last Activity' onClick={() => sortTable("last_activity")}>Senaste Aktivitet {sortDirection === "asc" ? <FontAwesomeIcon icon={faArrowDownShortWide} className='last_activity-th-icon' /> : <FontAwesomeIcon icon={faArrowUpWideShort} className='last_activity-th-icon' />} </th>
+                            <th>Ändra Status</th>
+                            <th>Medlemslista</th>
+                            <th>Status uppd. av:</th>
+                            <th>Status uppd. Datum</th>
                             {/* <th></th> */}
-                            <th>Notes</th>
+                            <th>Anteckningar</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -458,7 +517,7 @@ function Index() {
                             <td style={{ 
                                 textAlign: 'center', 
                                 height: '100px', 
-                                width: '1325%',
+                                width: '1770%',
                                 display: 'flex', 
                                 justifyContent: 'center', 
                                 alignItems: 'center' 
@@ -486,10 +545,10 @@ function Index() {
                                 }`}>
                                     {/* {item.done_date && item.done_date ? "DONE" : item.in_progress_date ? "IN PROGRESS" : ""} */}
                                     {item.done_date && (!item.in_progress_date || new Date(item.done_date) > new Date(item.in_progress_date))
-                                    ? "DONE"
+                                    ? "KLART"
                                     : item.in_progress_date
-                                    ? "IN PROGRESS"
-                                    : ""}
+                                    ? "PÅGÅENDE"
+                                    : "NYTT"}
                                 </td>
                                 <td className='row-projectname'>{item.name}</td>
                                 <td>{item.last_activity?.substring(0,10)}</td>
@@ -510,12 +569,23 @@ function Index() {
                                         }}
                                         defaultValue={item.done_date && (!item.in_progress_date || new Date(item.done_date) > new Date(item.in_progress_date)) ? "Done" : item.in_progress_date && (!item.done_date || new Date(item.in_progress_date) > new Date(item.done_date)) ? "In Progress" : ""} 
                                     >
-                                        <option value="" disabled>Select Status</option>
-                                        <option value="None" style={{ backgroundColor: "#e7e7e7" }}>None</option> 
-                                        <option value="In Progress" style={{ backgroundColor: "yellow" }}>In Progress</option>
-                                        <option value="Done" style={{ backgroundColor: "#00ff15" }}>Done</option>
+                                        <option value="" disabled>Ändra Status</option>
+                                        <option value="None" style={{ backgroundColor: "#e7e7e7" }}>Nytt</option> 
+                                        <option value="In Progress" style={{ backgroundColor: "yellow" }}>Pågående</option>
+                                        <option value="Done" style={{ backgroundColor: "#00ff15" }}>Klart</option>
                                     </select>
                                 </td>   
+                                <td className='pl-4'>
+                                <label className="checkbox-container">
+                                    <input
+                                        type="checkbox"
+                                        className="checkbox "
+                                        onChange={(e) => handleCheckboxChange(e, item.uuid)}
+                                        checked={item.memberslist}
+                                    />
+                                    <span className="checkmark"></span>
+                                </label>
+                                </td>
                                 <td>
                                     {item.done_date ? item.done_user
                                         : item.in_progress_date ? item.in_progress_user 
@@ -526,13 +596,6 @@ function Index() {
                                         : item.in_progress_date ? item.in_progress_date.substring(0,10)
                                         : ""}
                                 </td>
-                                {/* <td>
-                                    <button title='Set Status to In Progress' onClick={() => setInProgress(item.uuid)}>In progress</button>
-                                </td> */}
-                                {/* <td>
-                                    <button title='Set Status to In Progress' className='mr-1 in-progress-status-button' onClick={() => setInProgress(item.uuid)}>In Progress</button>
-                                    <button title='Set Status to Done' className='done-status-button' onClick={() => setDone(item.uuid)}>Done</button>
-                                </td> */}
                                 <td>
                                     <button title='Open Notes' className={`notes-table-button`} onClick={() => handleOpenModal(item)}>{item.notes ? <FontAwesomeIcon icon={solidNoteSticky} /> : <FontAwesomeIcon icon={regularNoteSticky} />}
                                     </button>
