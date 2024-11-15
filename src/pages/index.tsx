@@ -70,6 +70,7 @@ function Index() {
 
     const [sortStatus, setSortStatus] = useState<string>("all");
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc'); 
+    const [sortMemberslistDirection, setSortMemberslistDirection] = useState<'asc' | 'desc'>('asc'); 
 
     const [showNotesModal, setShowNotesModal] = useState(false);
     const [selectedProject, setSelectedProject] = useState<Data[]>([]);
@@ -315,19 +316,32 @@ function Index() {
     //  --------------- SORTING TABLE --------------
 
     const sortTable = (column: string) => {
-        const sortedData = [...matched]; // clone data array
-        let direction: 'asc' | 'desc' = sortDirection === 'asc' ? 'desc' : 'asc';
+        const sortedData = [...matched];
+        let direction: 'asc' | 'desc';
         
         if (column === 'last_activity') {
+            direction = sortDirection === 'asc' ? 'desc' : 'asc';
             sortedData.sort((a, b) => {
                 const dateA = new Date(a.last_activity ?? 0).getTime();
                 const dateB = new Date(b.last_activity ?? 0).getTime();
                 return direction === 'asc' ? dateA - dateB : dateB - dateA;
             });
-        } 
-        setSortDirection(direction);
-        setData(sortedData);
+            setSortDirection(direction); 
+        }
+    
+        if (column === 'memberslist') {
+            direction = sortMemberslistDirection === 'asc' ? 'desc' : 'asc';
+            sortedData.sort((a, b) => {
+                const valueA = Number(a.memberslist ?? 0); 
+                const valueB = Number(b.memberslist ?? 0);
+                return direction === 'asc' ? valueA - valueB : valueB - valueA;
+            });
+            setSortMemberslistDirection(direction); 
+        }
+    
+        setData(sortedData); 
     };
+    
 
 
     // Sort table based on status all, in progress, done
@@ -393,10 +407,11 @@ function Index() {
             if (responseCheck.status === 200){
                 console.log('Updated');
                 checkForUpdatedMemberslist();
-                // toast.success("")
+                toast.success("Medlemslistan uppdaterad")
             } else {
                 console.log('Failed');
-                // toast.error("")
+                toast.error("Misslyckades, försök igen");
+
             }
         } catch (error) {
             console.log('Error when checking memberslist', error);
@@ -502,11 +517,11 @@ function Index() {
                                     onChange={(e)=>handleSearchInput(e.target.value)}
                                 ></input>
                             </th>
-                            <th className='last_activity-th' title='Sort By Last Activity' onClick={() => sortTable("last_activity")}>Senaste Aktivitet {sortDirection === "asc" ? <FontAwesomeIcon icon={faArrowDownShortWide} className='last_activity-th-icon' /> : <FontAwesomeIcon icon={faArrowUpWideShort} className='last_activity-th-icon' />} </th>
+                            <th className='last_activity-th' title='Sortera efter senaste aktivitet' onClick={() => sortTable("last_activity")}>Senaste Aktivitet {sortDirection === "asc" ? <FontAwesomeIcon icon={faArrowDownShortWide} className='last_activity-th-icon' /> : <FontAwesomeIcon icon={faArrowUpWideShort} className='last_activity-th-icon' />} </th>
                             <th>Ändra Status</th>
-                            <th>Medlemslista</th>
-                            <th>Status uppd. av:</th>
-                            <th>Status uppd. Datum</th>
+                            <th title='Sortera efter medlemslista' onClick={() => sortTable("memberslist")} className='memberslist-th'>Medlemslista {sortMemberslistDirection === "asc" ? <FontAwesomeIcon icon={faArrowDownShortWide} className='last_activity-th-icon' /> : <FontAwesomeIcon icon={faArrowUpWideShort} className='last_activity-th-icon' />}</th>
+                            <th>Uppdaterad av</th>
+                            <th>Datum</th>
                             {/* <th></th> */}
                             <th>Anteckningar</th>
                         </tr>
@@ -554,7 +569,7 @@ function Index() {
                                 <td>{item.last_activity?.substring(0,10)}</td>
                                 <td>
                                     <select
-                                        title="Set Project Status"
+                                        title="Ändra status"
                                         className="status-select"
                                         onChange={(e) => {
                                             e.preventDefault();
@@ -575,13 +590,13 @@ function Index() {
                                         <option value="Done" style={{ backgroundColor: "#00ff15" }}>Klart</option>
                                     </select>
                                 </td>   
-                                <td className='pl-4'>
+                                <td className=''>
                                 <label className="checkbox-container">
                                     <input
                                         type="checkbox"
                                         className="checkbox "
                                         onChange={(e) => handleCheckboxChange(e, item.uuid)}
-                                        checked={item.memberslist}
+                                        checked={item.memberslist || false}
                                     />
                                     <span className="checkmark"></span>
                                 </label>
@@ -597,7 +612,7 @@ function Index() {
                                         : ""}
                                 </td>
                                 <td>
-                                    <button title='Open Notes' className={`notes-table-button`} onClick={() => handleOpenModal(item)}>{item.notes ? <FontAwesomeIcon icon={solidNoteSticky} /> : <FontAwesomeIcon icon={regularNoteSticky} />}
+                                    <button title='Öppna anteckningar' className={`notes-table-button`} onClick={() => handleOpenModal(item)}>{item.notes ? <FontAwesomeIcon icon={solidNoteSticky} /> : <FontAwesomeIcon icon={regularNoteSticky} />}
                                     </button>
                                 </td>
                             </tr>

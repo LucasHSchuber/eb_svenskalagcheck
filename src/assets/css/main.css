@@ -67,8 +67,16 @@ th, td {
 
 .last_activity-th{
     cursor: pointer;
+    text-decoration: underline;
 }
 .last_activity-th-icon:hover{
+    color: grey;
+}
+.memberslist-th{
+    cursor: pointer;
+    text-decoration: underline;
+}
+.memberslist-th-icon:hover{
     color: grey;
 }
 .project-done{
@@ -88,7 +96,6 @@ th, td {
 
 .checkbox-container input[type="checkbox"] {
     display: none;
-    
 }
 .checkbox-container {
     display: inline-block;
@@ -96,6 +103,7 @@ th, td {
     cursor: pointer;
     font-size: 18px;
     user-select: none;
+    margin-bottom: 0.6em !important;
 }
 .checkmark {
     border: 1px solid rgb(140, 140, 140);
@@ -104,9 +112,8 @@ th, td {
     left: 0;
     height: 25px;
     width: 25px;
-    background-color: #ccc;
+    background-color: #f6f6f6;
     border-radius: 4px;
-    transition: background-color 0.2s ease;
 }
 .checkbox-container input:checked + .checkmark {
     background-color: #4caf50; 
