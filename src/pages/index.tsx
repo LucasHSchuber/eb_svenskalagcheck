@@ -184,16 +184,11 @@ function Index() {
             // Compare new data timestamps to the latest stored timestamps
             newData.forEach((item: any) => {
                 const storedTimestamp = latestTimestamps[item.uuid];
-                if (
-                    storedTimestamp &&
-                    (storedTimestamp.done_date !== item.done_date ||
-                     storedTimestamp.in_progress_date !== item.in_progress_date)
-                ) {
+                if (storedTimestamp && (storedTimestamp.done_date !== item.done_date || storedTimestamp.in_progress_date !== item.in_progress_date)) {
                     needsUpdate = true;
                 }
             });
-
-            // if any changes are detected
+            console.log('needsUpdate', needsUpdate);
             if (needsUpdate) {
                 setData(newData);
                 setLatestTimestamps(getLatestTimestamps(newData));
@@ -202,13 +197,13 @@ function Index() {
             console.log('Error checking for updates:', error);
         }
     };
-    // Periodic check setup
-    useEffect(() => {
-        const intervalId = setInterval(() => {
-            checkForUpdates(); 
-        }, 5000);
-        return () => clearInterval(intervalId); 
-    }, []); 
+    // // Check for changes and update table every 5th seconds
+    // useEffect(() => {
+    //     const intervalId = setInterval(() => {
+    //         checkForUpdates(); 
+    //     }, 5000);
+    //     return () => clearInterval(intervalId); 
+    // }, []); 
 
     // METHOD to extract latest timestamps 
     const getLatestTimestamps = (data: any) => {
@@ -353,12 +348,17 @@ function Index() {
     // Filter the matched items based on the sortStatus
     const filteredItems = matched.filter(item => {
         if (sortStatus === "in progress") {
-            return item.in_progress_date !== null && item.done_date === null;
+            const inProgressDate = item.in_progress_date ? new Date(item.in_progress_date) : null;
+            const doneDate = item.done_date ? new Date(item.done_date) : null;
+            return inProgressDate && (!doneDate || inProgressDate > doneDate);
         } else if (sortStatus === "done") {
-           return item.done_date && (!item.in_progress_date || new Date(item.done_date) > new Date(item.in_progress_date))
+            const doneDate = item.done_date ? new Date(item.done_date) : null;
+            const inProgressDate = item.in_progress_date ? new Date(item.in_progress_date) : null;
+            return doneDate && (!inProgressDate || doneDate > inProgressDate);
         }
         return !item.done_date && !item.in_progress_date;
     });
+
 
 
 
