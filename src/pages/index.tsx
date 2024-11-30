@@ -27,6 +27,11 @@ console.log('API_URL', API_URL);
 import getToken from '../assets/ts/fetchToken'
 
 
+const ENV = import.meta.env;
+console.log("ENV", ENV);
+console.log("ENV.MODE", ENV.MODE);
+
+
 // Interfaces
 interface Data {                  
     jobtype_uuid: string;
@@ -105,9 +110,7 @@ function Index() {
     // Validate token 
     const validateToken = async (token: string) => {
         try {
-            const response = await axios.get(
-            `/api/index.php/rest/auth/validate_token/${token}`,
-            {
+            const response = await axios.get(`${ENV.MODE === "production" ? "https://backend.expressbild.org" : "/api"}/index.php/rest/auth/validate_token/${token}`,{
                 headers: {
                 'Content-Type': 'application/json',
                 },

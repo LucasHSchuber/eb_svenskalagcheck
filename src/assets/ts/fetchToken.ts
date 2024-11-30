@@ -24,9 +24,12 @@ const useFetchToken = () => {
       } else {
         console.log("Running production");
         const queryParams = new URLSearchParams(window.location.search);
+        console.log("queryParams", queryParams);
         const tokenFromUrl = queryParams.get('token');
+        console.log("tokenFromUrl", tokenFromUrl);
         if (tokenFromUrl !== null) {
           setToken(tokenFromUrl);
+          console.log("Token set in production mode")
         } else {
           console.log("Token not found in URL");
           setToken('');
