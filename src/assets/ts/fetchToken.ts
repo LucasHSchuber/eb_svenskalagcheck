@@ -4,13 +4,20 @@ import { useEffect, useState } from 'react';
 import { TOKEN as VITE_TOKEN } from '../ts/apiConfig';
 
 const ENV = import.meta.env;
+console.log("ENV", ENV);
+console.log("ENV.MODE", ENV.MODE);
+
+if (ENV.VITE_MODE === 'production') {
+  console.log('Simulating production mode in dev');
+}
+
 
 const useFetchToken = () => {
   const [token, setToken] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchToken = () => {
-      if (ENV.DEV) {
+      if (ENV.MODE === "development") {
         setToken(VITE_TOKEN);
         console.log('ENV.VITE_TOKEN:', VITE_TOKEN);
         console.log("Running development");

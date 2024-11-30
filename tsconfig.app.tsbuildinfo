@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/main.tsx","./src/vite-env.d.ts","./src/assets/ts/apiconfig.ts","./src/assets/ts/fetchtoken.ts","./src/assets/ts/main.ts","./src/components/header.tsx","./src/components/notesmodal.tsx","./src/pages/index.tsx"],"version":"5.6.3"}
