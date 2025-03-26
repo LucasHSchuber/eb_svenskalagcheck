@@ -2,7 +2,7 @@
 ### Lucas H. Schuber
 ### Software developer / Systemutvecklare
 
-This repository contains the web applications Svenska Lag. It is built using React.js with Vite with TypeScript.
+This repository contains the web applications Svenska Lag.
 
 ### Installation
 1. Clone this repository:

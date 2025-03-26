@@ -26,10 +26,8 @@ console.log('API_URL', API_URL);
 // import external ts files
 import getToken from '../assets/ts/fetchToken'
 
-
 const ENV = import.meta.env;
-console.log("ENV", ENV);
-console.log("ENV.MODE", ENV.MODE);
+
 
 
 // Interfaces
@@ -200,13 +198,7 @@ function Index() {
             console.log('Error checking for updates:', error);
         }
     };
-    // // Check for changes and update table every 5th seconds
-    // useEffect(() => {
-    //     const intervalId = setInterval(() => {
-    //         checkForUpdates(); 
-    //     }, 5000);
-    //     return () => clearInterval(intervalId); 
-    // }, []); 
+
 
     // METHOD to extract latest timestamps 
     const getLatestTimestamps = (data: any) => {
